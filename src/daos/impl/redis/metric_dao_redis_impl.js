@@ -56,10 +56,15 @@ const insertMetric = async (siteId, metricValue, metricName, timestamp) => {
   const client = redis.getClient();
 
   const metricKey = keyGenerator.getDayMetricKey(siteId, metricName, timestamp);
-  const minuteOfDay = timeUtils.getMinuteOfDay(timestamp);
+  const minuteOfDay = timeUtils.getMinuteOfDay(timestamp); // set score
+  const uniqueMetric = formatMeasurementMinute(metricValue, minuteOfDay);
 
-  // START Challenge #2
-  // END Challenge #2
+  const addedMetric = client.zaddAsync(metricKey, minuteOfDay, uniqueMetric);
+  const keyTimeToLive = await client.ttlAsync(metricKey);
+  if (keyTimeToLive === -1) {
+    await client.expireAsync(metricKey, metricExpirationSeconds);
+  }
+  return addedMetric;
 };
 /* eslint-enable */
 
