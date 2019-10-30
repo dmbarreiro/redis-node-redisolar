@@ -124,8 +124,11 @@ const insert = async (meterReading) => {
   const client = redis.getClient();
   const pipeline = client.batch();
 
-  // START Challenge #6
-  // END Challenge #6
+  const globalFeedKey = keyGenerator.getGlobalFeedKey();
+  const siteFeedKey = keyGenerator.getFeedKey(meterReading.siteId);
+
+  pipeline.xadd(globalFeedKey, 'MAXLEN', '~', globalMaxFeedLength, '*', ...fields);
+  pipeline.xadd(siteFeedKey, 'MAXLEN', '~', siteMaxFeedLength, '*', ...fields);
 
   await pipeline.execAsync();
 };
