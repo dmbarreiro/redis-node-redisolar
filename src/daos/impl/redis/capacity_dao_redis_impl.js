@@ -67,7 +67,14 @@ const getRank = async (siteId) => {
   // START Challenge #4
   const client = redis.getClient();
 
-  const result = await client.zrankAsync(
+  // ZRANK gives lower scores a lower rank value (lowest value will be ranked as 0)
+  // const result = await client.zrankAsync(
+  //   keyGenerator.getCapacityRankingKey(),
+  //   `${siteId}`,
+  // );
+
+  // ZREVRANK gives higher scores a lower rank value (highest value will be ranked as 0)
+  const result = await client.zrevrankAsync(
     keyGenerator.getCapacityRankingKey(),
     `${siteId}`,
   );
