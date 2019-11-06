@@ -75,10 +75,14 @@ const getSiteStatsKey = (siteId, timestamp) => getKey(`sites:stats:${timeUtils.g
  * @param {number} interval - the time period that the rate limiter applies for (mins).
  * @param {number} maxHits - the maximum number of hits on the resource
  *  allowed in the interval.
+ * @param {boolean} sliding - indicates if requested key is for a sliding window.
  * @returns {string} - the Redis key used to store the rate limiter data for the
  *  given parameters.
  */
-const getRateLimiterKey = (name, interval, maxHits) => {
+const getRateLimiterKey = (name, interval, maxHits, sliding) => {
+  if (sliding) {
+    return getKey(`limiter:${interval}:${name}:${maxHits}`);
+  }
   const minuteOfDay = timeUtils.getMinuteOfDay();
   return getKey(`limiter:${name}:${Math.floor(minuteOfDay / interval)}:${maxHits}`);
 };

@@ -19,7 +19,6 @@ const keyGenerator = require('./redis_key_generator');
 const hitFixedWindow = async (name, opts) => {
   const client = redis.getClient();
   const key = keyGenerator.getRateLimiterKey(name, opts.interval, opts.maxHits);
-
   const pipeline = client.batch();
 
   pipeline.incr(key);
@@ -45,9 +44,31 @@ const hitFixedWindow = async (name, opts) => {
 // Challenge 7
 const hitSlidingWindow = async (name, opts) => {
   const client = redis.getClient();
+  const key = keyGenerator.getRateLimiterKey(name, opts.interval, opts.maxHits, true);
+  const slidingRateLimiterTransaction = client.multi();
 
-  // START Challenge #7
-  // END Challenge #7
+  const currentTimestamp = Date.now();
+  const windowSizeMilisec = opts.interval * 1000;
+  const minimumValidTimestamp = currentTimestamp - windowSizeMilisec;
+
+  slidingRateLimiterTransaction.zadd(key, currentTimestamp, Math.random());
+  slidingRateLimiterTransaction.zremrangebyscore(key, '-inf', `(${minimumValidTimestamp}`);
+  slidingRateLimiterTransaction.zcard(key);
+
+  const response = await slidingRateLimiterTransaction.execAsync();
+  const hits = parseInt(response[2], 10);
+
+  let hitsRemaining;
+
+  if (hits > opts.maxHits) {
+    // Too many hits.
+    hitsRemaining = 0;
+  } else {
+    // Return number of hits remaining.
+    hitsRemaining = opts.maxHits - hits;
+  }
+
+  return hitsRemaining;
 };
 /* eslint-enable */
 
